@@ -143,11 +143,14 @@ class Wavset:
         self.num_examples = []
         for name, meta in self.metadata.items():
             track_duration = meta['length'] / meta['samplerate']
+            print(track_duration, meta['length'] , meta['samplerate'])
             if segment is None or track_duration < segment:
                 examples = 1
             else:
+                print("examples", track_duration , self.segment, self.shift)
                 examples = int(math.ceil((track_duration - self.segment) / self.shift) + 1)
             self.num_examples.append(examples)
+        print("self.num_examples", self.num_examples)
 
     def __len__(self):
         return sum(self.num_examples)
@@ -226,24 +229,33 @@ def get_musdb_wav_datasets(args):
     sig = hashlib.sha1(str(args.musdb).encode()).hexdigest()[:8]
     metadata_file = Path(args.metadata) / ('musdb_' + sig + ".json")
     root = Path(args.musdb) / "train"
+    print(sig, metadata_file, root)
     if not metadata_file.is_file() and distrib.rank == 0:
+        print('get_musdb_wav_datasets 1')
         metadata_file.parent.mkdir(exist_ok=True, parents=True)
         metadata = build_metadata(root, args.sources)
         json.dump(metadata, open(metadata_file, "w"))
     if distrib.world_size > 1:
+        print('get_musdb_wav_datasets 2')
         distributed.barrier()
     metadata = json.load(open(metadata_file))
 
     valid_tracks = _get_musdb_valid()
     if args.train_valid:
+        print('get_musdb_wav_datasets 3')
         metadata_train = metadata
     else:
+        print('get_musdb_wav_datasets 4')
         metadata_train = {name: meta for name, meta in metadata.items() if name not in valid_tracks}
     metadata_valid = {name: meta for name, meta in metadata.items() if name in valid_tracks}
     if args.full_cv:
         kw_cv = {}
     else:
         kw_cv = {'segment': args.segment, 'shift': args.shift}
+    print(root, metadata_train, args.sources,
+                       args.segment, args.shift,
+                       args.samplerate, args.channels,
+                       args.normalize)
     train_set = Wavset(root, metadata_train, args.sources,
                        segment=args.segment, shift=args.shift,
                        samplerate=args.samplerate, channels=args.channels,

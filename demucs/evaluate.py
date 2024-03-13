@@ -23,6 +23,8 @@ from .audio import convert_audio, save_audio
 from . import distrib
 from .utils import DummyPoolExecutor
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 logger = logging.getLogger(__name__)
 

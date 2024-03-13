@@ -170,6 +170,7 @@ class Solver(object):
         return losses
 
     def train(self):
+        #input("train 0")
         # Optimizing the model
         if self.history:
             logger.info("Replaying metrics from previous run")
@@ -184,19 +185,25 @@ class Solver(object):
                 formatted = self._format_test(metrics['test'])
                 if formatted:
                     logger.info(bold(f"Test Summary | Epoch {epoch + 1} | {_summary(formatted)}"))
-
+        #input("train 1")
         epoch = 0
         for epoch in range(len(self.history), self.args.epochs):
+            #input("train 2")
             # Train one epoch
             self.model.train()  # Turn on BatchNorm & Dropout
+            #input("train 3")
             metrics = {}
             logger.info('-' * 70)
             logger.info("Training...")
+            print(epoch)
+            #input("train 3.1")            
             metrics['train'] = self._run_one_epoch(epoch)
+            #input("train 3.2")
             formatted = self._format_train(metrics['train'])
             logger.info(
                 bold(f'Train Summary | Epoch {epoch + 1} | {_summary(formatted)}'))
 
+            #input("train 4")
             # Cross validation
             logger.info('-' * 70)
             logger.info('Cross validation...')
@@ -227,6 +234,7 @@ class Solver(object):
                     metrics['valid'].update(bvalid)
                     metrics['valid']['bname'] = bname
 
+            #input("train 5")
             valid_loss = metrics['valid'][key]
             mets = pull_metric(self.link.history, f'valid.{key}') + [valid_loss]
             if key.startswith('nsdr'):
@@ -292,6 +300,7 @@ class Solver(object):
         args = self.args
         data_loader = self.loaders['train'] if train else self.loaders['valid']
         if distrib.world_size > 1 and train:
+            #input("logprog 0")
             data_loader.sampler.set_epoch(epoch)
 
         label = ["Valid", "Train"][train]
@@ -303,24 +312,45 @@ class Solver(object):
                               updates=self.args.misc.num_prints, name=name)
         averager = EMA()
 
+        print(total)
+        #input("logprog 1")
+        # enumerate(logprog)
+        
+        #input("logprog 1.1")
+        #input("logprog 1.2")
+        #input("logprog 1.3")
         for idx, sources in enumerate(logprog):
+            print("xxxxxxxxxxlogprog")
+            #input("logprog 2")
+            print(self.device, type(sources))
             sources = sources.to(self.device)
+            print(self.device, type(sources))
+            input("logprog 99")
             if train:
                 sources = self.augment(sources)
                 mix = sources.sum(dim=1)
             else:
                 mix = sources[:, 0]
                 sources = sources[:, 1:]
-
+            #input("logprog 2.1")
             if not train and self.args.valid_apply:
+                #input("logprog 2.2")
                 estimate = apply_model(self.model, mix, split=self.args.test.split, overlap=0)
             else:
+                print(type(mix), mix.size())
+                print(mix)
+                input("logprog 2.3")
                 estimate = self.dmodel(mix)
+                print(type(estimate), estimate.size())
+                print(estimate)
+                input("logprog 2.3.555")
+            #input("logprog 2.4")
             if train and hasattr(self.model, 'transform_target'):
+                #input("logprog 2.5")
                 sources = self.model.transform_target(mix, sources)
             assert estimate.shape == sources.shape, (estimate.shape, sources.shape)
             dims = tuple(range(2, sources.dim()))
-
+            #input("logprog 3")
             if args.optim.loss == 'l1':
                 loss = F.l1_loss(estimate, sources, reduction='none')
                 loss = loss.mean(dims).mean(0)
@@ -334,7 +364,7 @@ class Solver(object):
                 raise ValueError(f"Invalid loss {self.args.loss}")
             weights = torch.tensor(args.weights).to(sources)
             loss = (loss * weights).sum() / weights.sum()
-
+            #input("logprog 4")
             ms = 0
             if self.quantizer is not None:
                 ms = self.quantizer.model_size()
@@ -344,7 +374,7 @@ class Solver(object):
             losses = {}
             losses['reco'] = (reco * weights).sum() / weights.sum()
             losses['ms'] = ms
-
+            #input("logprog 5")
             if not train:
                 nsdrs = new_sdr(sources, estimate.detach()).mean(0)
                 total = 0
@@ -361,7 +391,7 @@ class Solver(object):
                 loss += args.svd.penalty * penalty
 
             losses['loss'] = loss
-
+            #input("logprog 6")
             for k, source in enumerate(self.model.sources):
                 losses[f'reco_{source}'] = reco[k]
 
@@ -399,7 +429,11 @@ class Solver(object):
                 break
             if self.args.flag == 'debug':
                 break
+        
+        #input("logprog 20")
         if train:
+            #input("logprog 21")
             for ema in self.emas['epoch']:
+                #input("logprog 22")
                 ema.update()
         return distrib.average(losses, idx + 1)

@@ -111,9 +111,11 @@ def get_datasets(args):
         torchaudio.set_audio_backend(args.dset.backend)
     if args.dset.use_musdb:
         train_set, valid_set = get_musdb_wav_datasets(args.dset)
+        print("use_musdb")
     else:
         train_set, valid_set = [], []
     if args.dset.wav:
+        print("get_datasets 1")
         extra_train_set, extra_valid_set = get_wav_datasets(args.dset)
         if len(args.dset.sources) <= 4:
             train_set = ConcatDataset([train_set, extra_train_set])
@@ -123,6 +125,7 @@ def get_datasets(args):
             valid_set = extra_valid_set
 
     if args.dset.wav2:
+        print("get_datasets 2")
         extra_train_set, extra_valid_set = get_wav_datasets(args.dset, "wav2")
         weight = args.dset.wav2_weight
         if weight is not None:
@@ -142,9 +145,11 @@ def get_datasets(args):
             else:
                 valid_set = ConcatDataset([valid_set, extra_valid_set])
     if args.dset.valid_samples is not None:
+        print("get_datasets 3")
         valid_set = random_subset(valid_set, args.dset.valid_samples)
     assert len(train_set)
     assert len(valid_set)
+    print(len(train_set), len(valid_set))
     return train_set, valid_set
 
 
@@ -162,6 +167,7 @@ def get_solver(args, model_only=False):
             logger.info('Field: %.1f ms', field / args.dset.samplerate * 1000)
         sys.exit(0)
 
+    print("torch.cuda.is_available:", torch.cuda.is_available())
     # torch also initialize cuda seed if available
     if torch.cuda.is_available():
         model.cuda()
@@ -176,6 +182,7 @@ def get_solver(args, model_only=False):
         return Solver(None, model, optimizer, args)
 
     train_set, valid_set = get_datasets(args)
+    print("Training set len:", len(train_set))
 
     if args.augment.repitch.proba:
         vocals = []
@@ -185,6 +192,8 @@ def get_solver(args, model_only=False):
             logger.warning('No vocal source found')
         if args.augment.repitch.proba:
             train_set = RepitchedWrapper(train_set, vocals=vocals, **args.augment.repitch)
+            print("RepitchedWrapper len:", len(train_set))
+
 
     logger.info("train/valid set size: %d %d", len(train_set), len(valid_set))
     train_loader = distrib.loader(
@@ -218,9 +227,14 @@ def get_solver_from_sig(sig, model_only=False):
     with xp.enter(stack=True):
         return get_solver(xp.cfg, model_only)
 
+import json
 
 @hydra_main(config_path="../conf", config_name="config", version_base="1.1")
 def main(args):
+    print('main start...')
+    print(type(args))
+    print(args)
+    # return
     global __file__
     __file__ = hydra.utils.to_absolute_path(__file__)
     for attr in ["musdb", "wav", "metadata"]:

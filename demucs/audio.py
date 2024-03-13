@@ -13,6 +13,7 @@ import numpy as np
 import torch
 import torchaudio as ta
 import typing as tp
+import os
 
 from .utils import temp_filenames
 
@@ -257,8 +258,10 @@ def save_audio(wav: torch.Tensor,
             encoding = 'PCM_F'
         else:
             encoding = 'PCM_S'
+        # print("xxxx1", path, str(path), samplerate, encoding, bits_per_sample)
         ta.save(str(path), wav, sample_rate=samplerate,
                 encoding=encoding, bits_per_sample=bits_per_sample)
+        # print("xxxx2", str(path))
     elif suffix == ".flac":
         ta.save(str(path), wav, sample_rate=samplerate, bits_per_sample=bits_per_sample)
     else:

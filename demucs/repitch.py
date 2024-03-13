@@ -34,6 +34,7 @@ class RepitchedWrapper:
 
     def __getitem__(self, index):
         streams = self.dataset[index]
+        # return streams
         in_length = streams.shape[-1]
         out_length = int((1 - 0.01 * self.max_tempo) * in_length)
 
@@ -65,11 +66,12 @@ def repitch(wav, pitch, tempo, voice=False, quick=False, samplerate=44100):
     """
     infile = tempfile.NamedTemporaryFile(suffix=".wav")
     outfile = tempfile.NamedTemporaryFile(suffix=".wav")
-    save_audio(wav, infile.name, samplerate, clip='clamp')
+    print("repitch")
+    save_audio(wav, infile.name + ".wav", samplerate, clip='clamp')
     command = [
         "soundstretch",
-        infile.name,
-        outfile.name,
+        infile.name + ".wav",
+        outfile.name + ".wav",
         f"-pitch={pitch}",
         f"-tempo={tempo:.6f}",
     ]
@@ -78,9 +80,11 @@ def repitch(wav, pitch, tempo, voice=False, quick=False, samplerate=44100):
     if voice:
         command += ["-speech"]
     try:
+        print("command", command)
         sp.run(command, capture_output=True, check=True)
+        print("command 222222", command)
     except sp.CalledProcessError as error:
         raise RuntimeError(f"Could not change bpm because {error.stderr.decode('utf-8')}")
-    wav, sr = ta.load(outfile.name)
+    wav, sr = ta.load(outfile.name + ".wav")
     assert sr == samplerate
     return wav
