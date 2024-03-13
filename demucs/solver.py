@@ -184,6 +184,7 @@ class Solver(object):
                 formatted = self._format_test(metrics['test'])
                 if formatted:
                     logger.info(bold(f"Test Summary | Epoch {epoch + 1} | {_summary(formatted)}"))
+
         epoch = 0
         for epoch in range(len(self.history), self.args.epochs):
             # Train one epoch
@@ -311,10 +312,10 @@ class Solver(object):
 
         # 遍历每个 batch 进行训练或验证
         for idx, sources in enumerate(logprog):
-            print("xxxxxxxxxxlogprog")
-            print(self.device, type(sources))
+            print("sources xxxxxxxxxxlogprog")
+            print(self.device, type(sources), sources.size())
             sources = sources.to(self.device)
-            print(self.device, type(sources))
+            print(self.device, type(sources), sources.size())
             # 如果是训练模式，进行数据增强并计算混合信号
             if train:
                 sources = self.augment(sources)
@@ -327,11 +328,11 @@ class Solver(object):
                 estimate = apply_model(self.model, mix, split=self.args.test.split, overlap=0)
             else:
                 print("mix:", type(mix), mix.size())
-                input("logprog 2.3")
+                # input("logprog 2.3")
                 estimate = self.dmodel(mix)
                 print("estimate:",type(estimate), estimate.size())
                 # 如果是训练模式，对目标进行转换
-                input("logprog 2.3.555")
+                # input("logprog 2.3.555")
             if train and hasattr(self.model, 'transform_target'):
                 sources = self.model.transform_target(mix, sources)
             # 检查预测结果和目标的形状是否一致

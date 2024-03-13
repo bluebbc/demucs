@@ -66,7 +66,7 @@ def repitch(wav, pitch, tempo, voice=False, quick=False, samplerate=44100):
     """
     infile = tempfile.NamedTemporaryFile(suffix=".wav")
     outfile = tempfile.NamedTemporaryFile(suffix=".wav")
-    print("repitch")
+    # print("repitch")
     save_audio(wav, infile.name + ".wav", samplerate, clip='clamp')
     command = [
         "soundstretch",
@@ -80,9 +80,9 @@ def repitch(wav, pitch, tempo, voice=False, quick=False, samplerate=44100):
     if voice:
         command += ["-speech"]
     try:
-        print("command", command)
+        # print("command", command)
         sp.run(command, capture_output=True, check=True)
-        print("command 222222", command)
+        # print("command 222222", command)
     except sp.CalledProcessError as error:
         raise RuntimeError(f"Could not change bpm because {error.stderr.decode('utf-8')}")
     wav, sr = ta.load(outfile.name + ".wav")

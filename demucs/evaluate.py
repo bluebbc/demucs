@@ -116,8 +116,17 @@ def evaluate(solver, compute_sdr=False):
             estimates = estimates * ref.std() + ref.mean()
             estimates = estimates.to(eval_device)
 
-            references = th.stack(
-                [th.from_numpy(track.targets[name].audio).t() for name in model.sources])
+            # tensor_list = [th.from_numpy(track.targets[name].audio).t() for name in model.sources]
+            tensor_list = []
+            for name in model.sources:
+                if name == 'guitar' or name == 'piano':
+                    audio_tensor = th.from_numpy(track.targets['drums'].audio).t()
+                    tensor_list.append(audio_tensor)
+                else:
+                    audio_tensor = th.from_numpy(track.targets[name].audio).t()
+                    tensor_list.append(audio_tensor)
+
+            references = th.stack(tensor_list)
             if references.dim() == 2:
                 references = references[:, None]
             references = references.to(eval_device)

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 ROOT_URL = "https://dl.fbaipublicfiles.com/demucs/"
 REMOTE_ROOT = Path(__file__).parent / 'remote'
 
-SOURCES = ["drums", "bass", "other", "vocals"]
+SOURCES = ["drums", "bass", "other", "vocals", 'guitar', 'piano']
 DEFAULT_MODEL = 'htdemucs'
 
 
